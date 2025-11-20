@@ -1,0 +1,78 @@
+{
+  "language": "English",
+  "home": "Home",
+  "about": "About Us",
+  "contact-us": "Contact Us",
+  "dashboard": "Dashboard",
+  "team": "Team",
+  "resources": "Resources",
+  "certificates": "Certificates",
+  "sales": "Sales",
+  "signout": "Sign Out",
+  "signin": "Sign In",
+  "register": "Register",
+  "forgot-password": "Forgot Password",
+  "signup": "Sign Up",
+  "close": "Close",
+  "input": {
+    "label": {
+      "email": "Email",
+      "password": "Password",
+      "confirm-password": "Confirm Password",
+      "new-password": "New Password",
+      "confirm-new-password": "Confirm New Password",
+      "first-name": "First Name",
+      "last-name": "Last Name",
+      "full-name": "Full Name",
+      "phone": "Phone"
+    },
+    "error": {
+      "email": {
+        "required": "Email is required.",
+        "invalid": "Email must be a valid email address"
+      },
+      "password": {
+        "required": "Password is required.",
+        "min": "Password must be at least {min} characters",
+        "max": "Password must be at most {max} characters",
+        "complex": "Password must include at least one uppercase letter, one lowercase letter, and one number",
+        "match": "Passwords must match"
+      },
+      "text": {
+        "required": "{field} is required",
+        "min": "{field} must be at least {min} characters",
+        "max": "{field} must be max {max} characters",
+        "invalid": "{field} is invalid"
+      }
+    }
+  },
+  "messages": {
+    "signin-error": "Invalid email or password",
+    "password-reset-email-sent": "Password reset email sent. Please check your inbox."
+  },
+  "submit": "Submit",
+  "email": "Email",
+  "password": "Password",
+  "register-now": {
+    "success-alert": {
+      "title": "Account Registration Successful",
+      "message": "Your Account has been created. You will receive an email to confirm your email address. Please check your email and click on the link to activate your account."
+    },
+    "error-alert": {
+      "title": "Account Registration failed",
+      "message": "There was an error during registration. Please try again."
+    }
+  },
+  "countries": "Countries",
+  "partners": "Partners",
+  "settings": "Settings",
+  "help": "Help",
+  "faq": "FAQ",
+  "users": "Users",
+  "projects": "Projects",
+  "tasks": "Tasks",
+  "applications": "Applications",
+  "companies": "Companies",
+  "logo": "Logo",
+  "products": "Products"
+}

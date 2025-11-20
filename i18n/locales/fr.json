@@ -1,0 +1,68 @@
+{
+  "about": "À propos de nous",
+  "certificates": "Certificats",
+  "close": "Fermer",
+  "contact": "Contactez-nous",
+  "dashboard": "Tableau de bord",
+  "email": "Courriel",
+  "forgot-password": "Mot de passe oublié",
+  "home": "Maison",
+  "input": {
+    "error": {
+      "email": {
+        "invalid": "Le courriel doit être une adresse courriel valide",
+        "required": "Entrez votre courriel"
+      },
+      "password": {
+        "complex": "Le mot de passe doit comprendre au moins une lettre majuscule, une lettre minuscule et un chiffre",
+        "match": "Les mots de passe doivent être les mêmes",
+        "max": "Le mot de passe doit avoir au max {max} caractères.",
+        "max-length": "le mot de passe doit être au plus{max} personnages",
+        "min": "Le mot de passe doit avoir au moins {min} caractères.",
+        "min-length": "le mot de passe doit être au moins{min} personnages",
+        "required": "Entrez votre mot de passe"
+      },
+      "text": {
+        "invalid": "{field} n'est pas valide",
+        "max": "{field} doit avoir au max {max} e de caractères",
+        "min": "{field} doit avoir au moins {min} caractères",
+        "required": "{field} est nécessaire"
+      }
+    },
+    "label": {
+      "confirm-new-password": "Confirmer le nouveau mot de passe",
+      "confirm-password": "Confirmez le mot de passe",
+      "email": "Courriel",
+      "first-name": "Prénom",
+      "full-name": "Nom et prénom",
+      "last-name": "Nom",
+      "new-password": "Nouveau mot de passe",
+      "password": "Mot de passe",
+      "phone": "Téléphone"
+    }
+  },
+  "language": "Anglais",
+  "messages": {
+    "password-reset-email-sent": "Courriel de réinitialisation de mot de passe envoyé. Veuillez consulter votre boîte de réception.",
+    "signin-error": "Courriel ou mot de passe non valide"
+  },
+  "password": "Mot de passe",
+  "register": "Enregistrer",
+  "register-now": {
+    "error-alert": {
+      "message": "Il y a eu un problème pendant l'inscription. Essaie encore.",
+      "title": "L'inscription du compte a échoué"
+    },
+    "success-alert": {
+      "message": "Ton compte est créé. Tu vas recevoir un e-mail pour confirmer ton adresse e-mail. Va voir tes e-mails et clique sur le lien pour activer ton compte.",
+      "title": "Inscription du compte réussie"
+    }
+  },
+  "resources": "Ressources",
+  "sales": "Ventes",
+  "signin": "Se connecter",
+  "signout": "Se déconnecter",
+  "signup": "S'inscrire",
+  "submit": "Soumettre",
+  "team": "Équipe"
+}

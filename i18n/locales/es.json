@@ -1,0 +1,68 @@
+{
+  "about": "Sobre nosotros",
+  "certificates": "Certificados",
+  "close": "Cerrar",
+  "contact": "Contáctenos",
+  "dashboard": "Panel",
+  "email": "Correo electrónico",
+  "forgot-password": "Has olvidado tu contraseña",
+  "home": "Hogar",
+  "input": {
+    "error": {
+      "email": {
+        "invalid": "El correo electrónico debe ser una dirección de correo electrónico válida",
+        "required": "Se requiere correo electrónico."
+      },
+      "password": {
+        "complex": "La contraseña debe incluir al menos una letra mayúscula, una letra minúscula y un número",
+        "match": "Las contraseñas deben coincidir",
+        "max": "La contraseña debe tener como máximo  {max} personajes",
+        "max-length": "La contraseña debe tener como máximo {max} personajes",
+        "min": "La contraseña debe ser al menos {min} personajes",
+        "min-length": "La contraseña debe ser al menos{min} personajes",
+        "required": "Se requiere contraseña."
+      },
+      "text": {
+        "invalid": "{field} no es válido",
+        "max": "{field} debe ser máximo {max} personajes",
+        "min": "{field} debe ser al menos {min} personajes",
+        "required": "{field} se requiere"
+      }
+    },
+    "label": {
+      "confirm-new-password": "Confirmar nueva contraseña",
+      "confirm-password": "Confirmar contraseña",
+      "email": "Correo electrónico",
+      "first-name": "Nombre de pila",
+      "full-name": "Nombre completo",
+      "last-name": "Apellido",
+      "new-password": "Nueva contraseña",
+      "password": "Contraseña",
+      "phone": "Teléfono"
+    }
+  },
+  "language": "Inglés",
+  "messages": {
+    "password-reset-email-sent": "Se ha enviado un correo electrónico para restablecer la contraseña. Por favor, revise su bandeja de entrada.",
+    "signin-error": "Correo electrónico o contraseña no válidos"
+  },
+  "password": "Contraseña",
+  "register": "Registro",
+  "register-now": {
+    "error-alert": {
+      "message": "Se produjo un error durante el registro. Inténtalo de nuevo.",
+      "title": "Error en el registro de la cuenta"
+    },
+    "success-alert": {
+      "message": "Tu cuenta ha sido creada. Recibirás un correo electrónico para confirmar tu dirección. Revisa tu correo electrónico y haz clic en el enlace para activarla.",
+      "title": "Registro de cuenta exitoso"
+    }
+  },
+  "resources": "Recursos",
+  "sales": "Ventas",
+  "signin": "Iniciar sesión",
+  "signout": "Desconectar",
+  "signup": "Inscribirse",
+  "submit": "Entregar",
+  "team": "Equipo"
+}

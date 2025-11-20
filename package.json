@@ -1,0 +1,51 @@
+{
+  "name": "nuxt-app",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxtjs/i18n": "10.2.0",
+    "@pdf-lib/fontkit": "^1.1.1",
+    "@vuelidate/core": "^2.0.3",
+    "@vuelidate/validators": "^2.0.4",
+    "@vueuse/core": "^14.0.0",
+    "firebase": "^12.5.0",
+    "firebase-admin": "^13.6.0",
+    "mailersend": "^2.6.0",
+    "maska": "^3.2.0",
+    "nanoid": "^5.1.6",
+    "nodemailer": "^7.0.10",
+    "nuxt": "^4.2.1",
+    "papaparse": "^5.5.3",
+    "pdf-lib": "^1.17.1",
+    "pdf-merger-js": "^5.1.2",
+    "pdfjs-dist": "^5.4.394",
+    "pdfmake": "^0.2.20",
+    "pinia": "^3.0.4",
+    "uuid": "^13.0.0",
+    "vue": "^3.5.24",
+    "vue-country-flag-next": "^2.3.2",
+    "vue-pdf-embed": "^2.1.3",
+    "vue-router": "^4.6.3",
+    "vuetify": "^3.10.10"
+  },
+  "devDependencies": {
+    "@mdi/font": "^7.4.47",
+    "@nuxt/fonts": "^0.12.1",
+    "@nuxt/image": "^2.0.0",
+    "@nuxtjs/i18n": "^10.2.0",
+    "@nuxtjs/mdc": "^0.18.2",
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "@pinia/nuxt": "^0.11.3",
+    "@types/node": "^24.10.0",
+    "@types/papaparse": "^5.5.0",
+    "@types/pdfmake": "^0.2.12",
+    "vuetify-nuxt-module": "^0.18.8"
+  }
+}
