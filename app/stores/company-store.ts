@@ -1,121 +1,159 @@
-import { onSnapshot, collection, doc, setDoc, getDoc, updateDoc, Timestamp, query, where } from 'firebase/firestore';
-import type { Company, Permissions, Notifications } from '../../shared/types/company'
+import {
+  onSnapshot,
+  collection,
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  Timestamp,
+  query,
+  where,
+} from 'firebase/firestore'
+import type {
+  Company,
+  Permissions,
+  Notifications,
+  // CompanyNotifications, // uncomment if you have this type
+} from '../../shared/types/company'
 import { permissionTypes, notificationTypes } from '../../shared/constants'
 
-
 export const useCompanyStore = defineStore('company', () => {
+  // ---------------------------------------------------------------------------
+  // Nuxt / Firebase
+  // ---------------------------------------------------------------------------
+  const nuxtApp = useNuxtApp()
+  const { $db, $auth } = nuxtApp
 
-  const companies = ref<Company[]>([]);
+  const companiesRef = collection($db, 'companies')
+  // Query where authorizedUsers array contains current user email
+  const companiesQuery = query(
+    companiesRef,
+    where('authorizedUsers', 'array-contains', $auth.currentUser?.email)
+  )
+
+  // ---------------------------------------------------------------------------
+  // State
+  // ---------------------------------------------------------------------------
+  const companies = ref<Company[]>([])
+
   const company = ref<Company>({
-    partnerCode: "",
-    partnerId: "",
-    companyId: "",
-    company: "",
+    partnerCode: '',
+    partnerId: '',
+    companyId: '',
+    company: '',
     dba: false,
-    dbaName: "",
-    dbaUrl: "",
-    website: "",
+    dbaName: '',
+    dbaUrl: '',
+    website: '',
     agent: null,
     agentId: null,
     associates: [],
-    registeredAddress: "",
+    registeredAddress: '',
     hasOperationsAddress: false,
-    operationsAddress: "",
+    operationsAddress: '',
     contacts: [],
     businessLicense: {
-      number: "",
-      expiry: "",
-      url: "",
+      number: '',
+      expiry: '',
+      url: '',
     },
     isManufacturer: false,
     manufacturingLicense: {
-      number: "",
-      expiry: "",
-      url: "",
+      number: '',
+      expiry: '',
+      url: '',
     },
-    goodManufacturingLicenseURL: "",
+    goodManufacturingLicenseURL: '',
     isChamberMember: false,
     chamberMembership: {
-      number: "",
-      expiry: "",
+      number: '',
+      expiry: '',
     },
-
     authorizedUsers: [],
     userSettings: {},
-    status: "pending",
-    events: {}
-  });
+    status: 'pending',
+    events: {},
+  })
 
-  const activeCompanyId = ref<string | null>();
+  const addressList = ref<Address[]>([]);
 
-  const partnerStore = usePartnerStore();
-  const partner = computed(() => {
-    if (!company.value.partnerId) return undefined
-    return partnerStore.partners.values().find(p => p.id === company.value.partnerId);
-  });
+  const activeCompanyId = ref<string | null>(null)
 
-  //control validity of address components
-  const registeredAdressIsValid = ref<boolean>(true);
-  const operationsAdressIsValid = ref<boolean>(true);
+  // control validity of address components
+  const registeredAdressIsValid = ref<boolean>(true)
+  const operationsAdressIsValid = ref<boolean>(true)
 
-  function getCompanyById(companyId: string) {
-    const _company = companies.value.find(c => c.companyId === companyId);
-    if (_company) {
-      company.value = { ..._company };
-      return true
-    }
-    return false
-  }
+  const partnerStore = usePartnerStore()
 
-  // Initialize Firestore listener when nuxt app is available
+  // ---------------------------------------------------------------------------
+  // Firestore subscription
+  // ---------------------------------------------------------------------------
+  onSnapshot(companiesQuery, snapshot => {
+    snapshot.docChanges().forEach(change => {
+      const data = change.doc.data() as Company
 
-
-
-
-  const nuxtApp = useNuxtApp();
-  const { $db, $auth } = nuxtApp;
-
-  const companiesRef = collection($db, 'companies');
-  //query where authorizedUsers array contains current user id
-  const q = query(companiesRef, where('authorizedUsers', 'array-contains', $auth.currentUser?.email));
-
-  onSnapshot(q, (snapshot) => {
-    snapshot.docChanges().forEach((change) => {
       if (change.type === 'added') {
-        companies.value.push(change.doc.data() as Company);
+        // avoid duplicates in case of hot-reload / reconnect
+        const exists = companies.value.some(
+          c => c.companyId === data.companyId || c.companyId === change.doc.id
+        )
+        if (!exists) {
+          companies.value.push(data)
+        }
       }
-      if (change.type === 'modified') {
-        const index = companies.value.findIndex((company) => company.companyId === change.doc.id);
-        companies.value[index] = change.doc.data() as Company;
-      }
-      if (change.type === 'removed') {
-        companies.value = companies.value.filter((company) => company.companyId !== change.doc.id);
-      }
-    });
 
-    console.log('Company store: Loaded', companies.value.length, 'companies');
+      if (change.type === 'modified') {
+        const index = companies.value.findIndex(
+          c => c.companyId === change.doc.id || c.companyId === data.companyId
+        )
+        if (index !== -1) {
+          companies.value[index] = data
+        }
+      }
+
+      if (change.type === 'removed') {
+        companies.value = companies.value.filter(
+          c => c.companyId !== change.doc.id
+        )
+      }
+    })
+
+    console.log('Company store: Loaded', companies.value.length, 'companies')
 
     // Only set default if no active company is set yet
     if (!activeCompanyId.value) {
-      setActiveCompany(); // This will now check localStorage first
+      setActiveCompany()
     }
-  });
+  })
 
+  // ---------------------------------------------------------------------------
+  // Computed
+  // ---------------------------------------------------------------------------
+  const partner = computed(() => {
+    if (!company.value.partnerId) return undefined
+    // adjust depending on shape of partners in your store (Map vs Array)
+    return Array.from(partnerStore.partners.values()).find(
+      p => p.id === company.value.partnerId
+    )
+  })
 
-  const activeCompany = computed(() => {
-    return companies.value.find(c => c.companyId === activeCompanyId.value) || null;
-  });
+  const activeCompany = computed<Company | null>(() => {
+    return companies.value.find(c => c.companyId === activeCompanyId.value) || null
+  })
 
   const activeCompanyPartner = computed(() => {
-    return partnerStore.partners.values().find(p => p.id === activeCompany.value?.partnerId) || null;
+    if (!activeCompany.value?.partnerId) return null
+    return Array.from(partnerStore.partners.values()).find(
+      p => p.id === activeCompany.value?.partnerId
+    ) || null
   })
 
   const notifications = computed(() => {
-    const notifications: CompanyNotifications = {}
+    const notifications: Record<string, string[]> = {} // CompanyNotifications if you have the type
 
-    if (activeCompany.value === null) return notifications;
+    if (activeCompany.value === null) return notifications
 
-    const users = Object.keys(activeCompany.value?.userSettings || [])
+    const users = Object.keys(activeCompany.value.userSettings || {})
     users.forEach(u => {
       activeCompany.value?.userSettings[u]?.notifications.forEach(n => {
         if (!notifications[n]) {
@@ -126,17 +164,16 @@ export const useCompanyStore = defineStore('company', () => {
     })
 
     return notifications
-
   })
 
   type CompanyList = {
     companyId: string
     company: string
     partner: string
-    partnerLogo: string,
-    isDefault: boolean,
-    isArchived: boolean,
-    status: "approved" | "pending" | "rejected",
+    partnerLogo: string
+    isDefault: boolean
+    isArchived: boolean
+    status: 'approved' | 'pending' | 'rejected'
   }[]
 
   const companyList: ComputedRef<CompanyList> = computed(() => {
@@ -151,164 +188,180 @@ export const useCompanyStore = defineStore('company', () => {
     }))
   })
 
-
+  // ---------------------------------------------------------------------------
+  // Helpers / Getters-like functions
+  // ---------------------------------------------------------------------------
+  function getCompanyById(companyId: string) {
+    const _company = companies.value.find(c => c.companyId === companyId)
+    if (_company) {
+      company.value = { ..._company }
+      return true
+    }
+    return false
+  }
 
   function setActiveCompany(companyId?: string) {
     console.log('setActiveCompany called with:', companyId)
     console.log('Current activeCompanyId:', activeCompanyId.value)
 
     if (companyId) {
-      //set selected company
-      activeCompanyId.value = companyId;
+      // set selected company
+      activeCompanyId.value = companyId
+
       // Save to localStorage
       if (process.client) {
-        localStorage.setItem('activeCompanyId', companyId);
+        localStorage.setItem('activeCompanyId', companyId)
       }
+
       console.log('Set activeCompanyId to:', activeCompanyId.value)
-    } else {
-      // First try to restore from localStorage
-      let savedCompanyId: string | null = null;
-      if (process.client) {
-        savedCompanyId = localStorage.getItem('activeCompanyId');
-      }
-
-      // Check if saved company still exists in companies array
-      if (savedCompanyId && companies.value.some(c => c.companyId === savedCompanyId)) {
-        activeCompanyId.value = savedCompanyId;
-        console.log('Restored activeCompanyId from localStorage:', activeCompanyId.value)
-        return;
-      }
-
-      //set default company if exists
-      companies.value.forEach(c => {
-        if (c?.isDefault) {
-          activeCompanyId.value = c.companyId;
-        }
-      });
-
-      //else set first company
-      if (!activeCompanyId.value) {
-        activeCompanyId.value = companies.value[0]?.companyId || null;
-      }
-
-      // Save the fallback selection to localStorage
-      if (process.client && activeCompanyId.value) {
-        localStorage.setItem('activeCompanyId', activeCompanyId.value);
-      }
-
-      console.log('Set default activeCompanyId to:', activeCompanyId.value)
+      return
     }
+
+    // No companyId passed: try to restore from localStorage
+    let savedCompanyId: string | null = null
+    if (process.client) {
+      savedCompanyId = localStorage.getItem('activeCompanyId')
+    }
+
+    // Check if saved company still exists in companies array
+    if (savedCompanyId && companies.value.some(c => c.companyId === savedCompanyId)) {
+      activeCompanyId.value = savedCompanyId
+      console.log('Restored activeCompanyId from localStorage:', activeCompanyId.value)
+      return
+    }
+
+    // set default company if exists
+    const defaultCompany = companies.value.find(c => c?.isDefault)
+    if (defaultCompany) {
+      activeCompanyId.value = defaultCompany.companyId
+    }
+
+    // else set first company
+    if (!activeCompanyId.value) {
+      activeCompanyId.value = companies.value[0]?.companyId || null
+    }
+
+    // Save the fallback selection to localStorage
+    if (process.client && activeCompanyId.value) {
+      localStorage.setItem('activeCompanyId', activeCompanyId.value)
+    }
+
+    console.log('Set default activeCompanyId to:', activeCompanyId.value)
   }
 
   function newCompany() {
     company.value = {
-      partnerCode: "",
-      partnerId: "",
+      partnerCode: '',
+      partnerId: '',
       companyId: crypto.randomUUID(),
-      company: "",
+      company: '',
       dba: false,
-      dbaName: "",
-      dbaUrl: "",
-      website: "",
+      dbaName: '',
+      dbaUrl: '',
+      website: '',
       agent: null,
       agentId: null,
       associates: [],
-      registeredAddress: "",
+      registeredAddress: '',
       hasOperationsAddress: false,
-      operationsAddress: "",
+      operationsAddress: '',
       contacts: [],
       businessLicense: {
-        number: "",
-        expiry: "",
-        url: "",
+        number: '',
+        expiry: '',
+        url: '',
       },
       isManufacturer: false,
       manufacturingLicense: {
-        number: "",
-        expiry: "",
-        url: "",
+        number: '',
+        expiry: '',
+        url: '',
       },
-      goodManufacturingLicenseURL: "",
+      goodManufacturingLicenseURL: '',
       isChamberMember: false,
       chamberMembership: {
-        number: "",
-        expiry: "",
+        number: '',
+        expiry: '',
       },
       authorizedUsers: [],
       userSettings: {},
-      status: "pending",
-      events: {}
+      status: 'pending',
+      events: {},
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Actions: Firestore writes
+  // ---------------------------------------------------------------------------
   function setCompany() {
-    const { $auth, $db } = useNuxtApp();
-    const companyRef = doc($db, 'companies', company.value.companyId);
+    const { $auth, $db } = useNuxtApp()
+    const companyRef = doc($db, 'companies', company.value.companyId)
+
+    // first time creation
     if (!company.value.events?.created) {
       company.value.events = {
         created: {
           by: $auth.currentUser?.email!,
-          date: Timestamp.now()
-        }
-      };
+          date: Timestamp.now(),
+        },
+      }
 
-      //first time submission, set authorized users and user settings
-      company.value.authorizedUsers = [$auth.currentUser?.email!];
+      // first time submission, set authorized users and user settings
+      company.value.authorizedUsers = [$auth.currentUser?.email!]
       company.value.userSettings = {
         [$auth.currentUser?.email!]: {
-          permissions: permissionTypes.map(p => p as Permissions) as Permissions[],
-          notifications: notificationTypes.map(n => n as Notifications) as Notifications[],
+          permissions: permissionTypes.map(p => p as Permissions),
+          notifications: notificationTypes.map(n => n as Notifications),
           created: {
             by: $auth.currentUser?.email!,
-            date: Timestamp.now()
+            date: Timestamp.now(),
           },
           lastUpdate: {
             by: $auth.currentUser?.email!,
-            date: Timestamp.now()
+            date: Timestamp.now(),
           },
-        }
+        },
       }
     }
 
     if (company.value.events.submitted === undefined) {
-      company.value.events.submitted = [];
+      company.value.events.submitted = []
     }
     company.value.events.submitted.push({
       by: $auth.currentUser?.email!,
-      date: Timestamp.now()
-    });
+      date: Timestamp.now(),
+    })
 
     if (company.value.events.lastUpdated === undefined) {
-      company.value.events.lastUpdated = [];
+      company.value.events.lastUpdated = []
     }
     company.value.events.lastUpdated.push({
       by: $auth.currentUser?.email!,
-      date: Timestamp.now()
-    });
-    return setDoc(companyRef, company.value);
+      date: Timestamp.now(),
+    })
+
+    return setDoc(companyRef, company.value)
   }
 
   async function toggleDefault(companyId: string) {
-    if (!companyId) return;
-    const { $db } = useNuxtApp();
-    companyList.value.forEach(async (c) => {
-      //set default company
+    if (!companyId) return
+    const { $db } = useNuxtApp()
+
+    // Run updates sequentially; could also batch if you want
+    for (const c of companyList.value) {
+      const ref = doc($db, 'companies', c.companyId)
+
       if (c.companyId === companyId) {
-        updateDoc(doc($db, 'companies', c.companyId), { isDefault: true })
+        await updateDoc(ref, { isDefault: true })
+      } else if (c.isDefault) {
+        await updateDoc(ref, { isDefault: false })
       }
-      //remove other default company
-      else if (c.isDefault) {
-
-        updateDoc(doc($db, 'companies', c.companyId), { isDefault: false })
-      };
-    })
-
-
-
+    }
   }
 
   async function toggleArchive(companyId: string) {
-    const { $db } = useNuxtApp();
+    if (!companyId) return
+    const { $db } = useNuxtApp()
     const ref = doc($db, 'companies', companyId)
     const snap = await getDoc(ref)
 
@@ -318,21 +371,27 @@ export const useCompanyStore = defineStore('company', () => {
     }
   }
 
-  function setUserSettings(user: string, settings: { permissions: Permissions[], notifications: Notifications[] }) {
-    const { $auth } = useNuxtApp();
-    company.value = JSON.parse(JSON.stringify(activeCompany.value)); //deep clone to trigger reactivity
+  function setUserSettings(
+    user: string,
+    settings: { permissions: Permissions[]; notifications: Notifications[] }
+  ) {
+    const { $auth } = useNuxtApp()
+
+    // deep clone to trigger reactivity
+    company.value = JSON.parse(JSON.stringify(activeCompany.value))
+
     if (!company.value.authorizedUsers.includes(user)) {
-      company.value.authorizedUsers.push(user);
+      company.value.authorizedUsers.push(user)
       company.value.userSettings[user] = {
         permissions: settings.permissions,
         notifications: settings.notifications,
         created: {
           by: $auth.currentUser?.email!,
-          date: Timestamp.now()
+          date: Timestamp.now(),
         },
         lastUpdate: {
           by: $auth.currentUser?.email!,
-          date: Timestamp.now()
+          date: Timestamp.now(),
         },
       }
     } else {
@@ -340,42 +399,65 @@ export const useCompanyStore = defineStore('company', () => {
       company.value.userSettings[user]!.notifications = settings.notifications
       company.value.userSettings[user]!.lastUpdate = {
         by: $auth.currentUser?.email!,
-        date: Timestamp.now()
-      };
+        date: Timestamp.now(),
+      }
     }
+
     setCompany()
   }
 
   function removeUser(user: string) {
-    company.value = JSON.parse(JSON.stringify(activeCompany.value)); //deep clone to trigger reactivity
-    company.value.authorizedUsers = company.value.authorizedUsers.filter(u => u !== user);
-    delete company.value.userSettings[user];
-    if (confirm(`Are you sure you want to remove ${user} from this company? This action cannot be undone.`)) {
+    // deep clone to trigger reactivity
+    company.value = JSON.parse(JSON.stringify(activeCompany.value))
+
+    company.value.authorizedUsers = company.value.authorizedUsers.filter(
+      u => u !== user
+    )
+    delete company.value.userSettings[user]
+
+    if (
+      confirm(
+        `Are you sure you want to remove ${user} from this company? This action cannot be undone.`
+      )
+    ) {
       setCompany()
     }
 
-
-    //uncomment to remove without confirmation
-    //  companyStore.removeUser(user);  
-    setCompany()
+    // If you want to remove without confirmation, use:
+    // companyStore.removeUser(user);
   }
 
+  // ---------------------------------------------------------------------------
+  // Watchers
+  // ---------------------------------------------------------------------------
+  watch(
+    () => activeCompanyId.value,
+    newVal => {
+      // navigateTo(`/company/dashboard`) // if/when you want route reaction
+    },
+    { immediate: true }
+  )
 
-  watch(() => activeCompanyId.value, (newVal) => {
-    //navigateTo(`/company/dashboard`)
-
-  }, { immediate: true });
-
-
+  // ---------------------------------------------------------------------------
+  // Exposed API
+  // ---------------------------------------------------------------------------
   return {
+    // state
     companies,
     company,
-    partner,
+    activeCompanyId,
     registeredAdressIsValid,
     operationsAdressIsValid,
-    activeCompanyId,
+    addressList,
+
+    // computed
+    partner,
     activeCompany,
     activeCompanyPartner,
+    companyList,
+    notifications,
+
+    // methods
     getCompanyById,
     newCompany,
     setCompany,
@@ -384,7 +466,5 @@ export const useCompanyStore = defineStore('company', () => {
     setUserSettings,
     removeUser,
     setActiveCompany,
-    companyList,
-    notifications,
-  };
+  }
 })

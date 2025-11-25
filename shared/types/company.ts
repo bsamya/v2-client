@@ -215,14 +215,16 @@ export type MailingAddress = {
 
 export type Address = {
   addressId: string;
+  companyId: string;
   type: 'buyer' | 'consignee' | 'other';
   company: string;
   name: string;
-  street: string;
+  address1: string;
+  address2: string;
   city: string;
   state: string;
   postalCode: string;
   country: string;
-  phone: string;
-  email: string;
+  phone?: string;
+  email?: string;
 };
