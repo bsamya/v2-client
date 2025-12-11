@@ -1,249 +1,279 @@
 <template>
   <v-card title="Primary Information"
           outlined>
-
-
-    <h1>*** {{ activeAddressForm }} ***</h1>
     <v-card-text class="grid grid-cols-2 gap-2">
-      <!-- Consignee -->
-      <div v-if="consigneeList.length > 0"
+
+      <!-- ------------------------------- -->
+      <!-- Consignee ---------------------- -->
+      <!-- ------------------------------- -->
+      <div v-if="consignees.length > 0"
            class="flex gap-2">
+
         <v-autocomplete label="Select Consignee *"
                         v-model="application.consignee"
-                        :items="consigneeList"
-                        density="compact"
-                        item-title="name"
+                        :items="consignees"
+                        item-title="company"
                         item-value="addressId"
+                        density="compact"
                         clearable
                         return-object
                         :error-messages="errors.consignee"
-                        @blur="v$.consignee.$touch()">
-          <template #append-inner>
-            <v-icon v-if="v$.consignee.$error"
-                    color="error"
-                    size="20"
-                    class="mr-2"
-                    icon="mdi-alert-circle" />
+                        @update:modelValue="v$.consignee.$touch()">
 
-            <v-icon v-else-if="v$.consignee.$dirty"
-                    color="success"
-                    size="20"
-                    class="mr-2"
-                    icon="mdi-check-circle" />
+          <!-- prepend-inner validation icon -->
+          <template #prepend-inner>
+            <validation-icons :v="v$.consignee" />
           </template>
+
+          <!-- list item with edit button -->
+          <template #item="{ item, props }">
+            <v-list-item v-bind="props">
+              <v-list-item-subtitle>{{ item.raw.name }}</v-list-item-subtitle>
+
+              <template #append>
+                <v-btn icon
+                       size="small"
+                       variant="text"
+                       @click.stop.prevent="editAddress(item.raw)">
+                  <v-icon icon="mdi-pencil" />
+                </v-btn>
+              </template>
+            </v-list-item>
+          </template>
+
         </v-autocomplete>
 
-        <v-tooltip activator="parent">
+        <!-- plus button -->
+        <v-tooltip activator="parent"
+                   location="start"
+                   text="Add new Consignee">
           <template #activator="{ props }">
             <v-btn v-bind="props"
                    icon="mdi-plus"
                    color="info"
-                   size="small">
-
+                   size="small"
+                   @click="addressId = null; activeAddressForm = 'consignee'">
             </v-btn>
           </template>
-          <span>Add New Consignee</span>
         </v-tooltip>
+
       </div>
+
       <v-btn v-else
              block
              color="info"
-             @click="activeAddressForm = 'consignee'">Add New Consignee</v-btn>
+             @click="addressId = null; activeAddressForm = 'consignee'">
+        Add New Consignee
+      </v-btn>
 
 
-      <!-- Buyer -->
-      <div class="flex gap-2"
-           v-if="buyerList.length > 0">
+
+
+      <!-- ------------------------------- -->
+      <!-- Buyer -------------------------- -->
+      <!-- ------------------------------- -->
+      <div v-if="buyers.length > 0"
+           class="flex gap-2">
+
         <v-autocomplete label="Select Buyer *"
                         v-model="application.buyer"
-                        :items="buyerList"
-                        item-title="name"
+                        :items="buyers"
+                        item-title="company"
                         item-value="addressId"
-                        clearable
                         density="compact"
+                        clearable
                         return-object
                         :error-messages="errors.buyer"
-                        @blur="v$.buyer.$touch()">
-          <template #append-inner>
-            <v-icon v-if="v$.buyer.$error"
-                    color="error"
-                    size="20"
-                    class="mr-2"
-                    icon="mdi-alert-circle" />
+                        @update:modelValue="v$.buyer.$touch()">
 
-            <v-icon v-else-if="v$.buyer.$dirty"
-                    color="success"
-                    size="20"
-                    class="mr-2"
-                    icon="mdi-check-circle" />
+          <!-- prepend-inner validation icon -->
+          <template #prepend-inner>
+            <validation-icons :v="v$.buyer" />
           </template>
+
+          <!-- list items -->
+          <template #item="{ item, props }">
+            <v-list-item v-bind="props">
+              <v-list-item-subtitle>{{ item.raw.name }}</v-list-item-subtitle>
+
+              <template #append>
+                <v-btn icon
+                       size="small"
+                       variant="text"
+                       @click.stop.prevent="editAddress(item.raw)">
+                  <v-icon icon="mdi-pencil" />
+                </v-btn>
+              </template>
+            </v-list-item>
+          </template>
+
         </v-autocomplete>
 
-        <v-tooltip activator="parent">
+        <v-tooltip text="Add New Buyer">
           <template #activator="{ props }">
             <v-btn v-bind="props"
                    icon="mdi-plus"
                    color="info"
-                   size="small">
-
+                   size="small"
+                   @click="addressId = null; activeAddressForm = 'buyer'">
             </v-btn>
           </template>
-          <span>Add New Buyer</span>
         </v-tooltip>
       </div>
+
       <v-btn v-else
-             class="mb-4"
+             block
              color="info"
-             @click="activeAddressForm = 'buyer'">Add New Buyer</v-btn>
-      <!-- Buyer -->
+             @click="addressId = null; activeAddressForm = 'buyer'">
+        Add New Buyer
+      </v-btn>
 
 
-      <!-- Transportation Type -->
+      <!-- ------------------------------- -->
+      <!-- Transportation Type ------------ -->
+      <!-- ------------------------------- -->
       <v-select label="Transportation Type *"
                 v-model="application.transportType"
                 :items="transportationTypes"
                 density="compact"
                 :error-messages="errors.transportType"
-                @blur="v$.transportType.$touch()">
-        <template #append-inner>
-          <v-icon v-if="v$.transportType.$error"
-                  icon="mdi-alert-circle"
-                  color="error"
-                  size="20"
-                  class="mr-2" />
-
-          <v-icon v-else-if="v$.transportType.$dirty"
-                  icon="mdi-check-circle"
-                  color="success"
-                  size="20"
-                  class="mr-2" />
+                @update:modelValue="v$.transportType.$touch()">
+        <template #prepend-inner>
+          <validation-icons :v="v$.transportType" />
         </template>
       </v-select>
 
-      <!-- Port of Loading -->
+
+
+      <!-- ------------------------------- -->
+      <!-- Port of Loading ---------------- -->
+      <!-- ------------------------------- -->
       <v-text-field label="Port of Loading or City *"
                     v-model="application.portOfLoading"
                     density="compact"
                     clearable
                     :error-messages="errors.portOfLoading"
                     @blur="v$.portOfLoading.$touch()">
-        <template #append-inner>
-          <v-icon v-if="v$.portOfLoading.$error"
-                  icon="mdi-alert-circle"
-                  color="error"
-                  size="20"
-                  class="mr-2" />
-
-          <v-icon v-else-if="v$.portOfLoading.$dirty"
-                  icon="mdi-check-circle"
-                  color="success"
-                  size="20"
-                  class="mr-2" />
+        <template #prepend-inner>
+          <validation-icons :v="v$.portOfLoading" />
         </template>
       </v-text-field>
 
-      <!-- Destination Country -->
-      <v-select v-model="application.destinationCountry"
-                :items="countryStore.data"
-                clearable
-                density="compact"
-                label="Destination Country *"
-                :error-messages="errors.destinationCountry"
-                @blur="v$.destinationCountry.$touch()">
-        <template #append-inner>
-          <v-icon v-if="v$.destinationCountry.$error"
-                  icon="mdi-alert-circle"
-                  color="error"
-                  size="20"
-                  class="mr-2" />
 
-          <v-icon v-else-if="v$.destinationCountry.$dirty"
-                  icon="mdi-check-circle"
-                  color="success"
-                  size="20"
-                  class="mr-2" />
+
+      <!-- ------------------------------- -->
+      <!-- Destination Country ------------ -->
+      <!-- ------------------------------- -->
+      <v-select label="Destination Country *"
+                v-model="application.destinationCountry"
+                :items="countryStore.data"
+                density="compact"
+                clearable
+                :error-messages="errors.destinationCountry"
+                @update:modelValue="v$.destinationCountry.$touch()">
+        <template #prepend-inner>
+          <validation-icons :v="v$.destinationCountry" />
         </template>
       </v-select>
 
-      <!-- Destination Port -->
+
+
+
+      <!-- ------------------------------- -->
+      <!-- Destination Port ---------------- -->
+      <!-- ------------------------------- -->
       <v-text-field label="Destination *"
                     v-model="application.destinationPort"
                     density="compact"
                     clearable
                     :error-messages="errors.destinationPort"
                     @blur="v$.destinationPort.$touch()">
-        <template #append-inner>
-          <v-icon v-if="v$.destinationPort.$error"
-                  icon="mdi-alert-circle"
-                  color="error"
-                  size="20"
-                  class="mr-2" />
-
-          <v-icon v-else-if="v$.destinationPort.$dirty"
-                  icon="mdi-check-circle"
-                  color="success"
-                  size="20"
-                  class="mr-2" />
+        <template #prepend-inner>
+          <validation-icons :v="v$.destinationPort" />
         </template>
       </v-text-field>
+
     </v-card-text>
+
+
     <address-form v-if="activeAddressForm"
+                  :key="addressformKey"
                   :type="activeAddressForm"
-                  @close="activeAddressForm = null" />
+                  :address-id="addressId"
+                  @close="closeAddressForm" />
   </v-card>
-
-
 </template>
+
+
 
 <script setup lang="ts">
 import { useVuelidate } from '@vuelidate/core'
 import { required, helpers, minLength, maxLength } from '@vuelidate/validators'
+import { close } from 'fs'
 
 const application = defineModel<COO>({ required: true })
 const countryStore = useCountryStore()
 const companyStore = useCompanyStore()
-const { addressList } = storeToRefs(companyStore)
 
-const transportationTypes = ['Air', 'Road', 'Sea', 'Rail']
-const buyerList = addressList.value.filter(addr => addr.type === 'buyer')
-const consigneeList = addressList.value.filter(addr => addr.type === 'consignee')
+const { buyers, consignees } = storeToRefs(companyStore)
+
+
 const rules = {
   // main section
   consignee: {
-    required: helpers.withMessage('Required', required),
+    required: helpers.withMessage(
+      'Please select a consignee for this shipment.',
+      required
+    ),
   },
   buyer: {
-    required: helpers.withMessage('Required', required),
+    required: helpers.withMessage(
+      'Please select a buyer for this shipment.',
+      required
+    ),
   },
   transportType: {
-    required: helpers.withMessage('Required', required),
+    required: helpers.withMessage(
+      'Please choose a transportation type (Air, Sea, Road, etc.).',
+      required
+    ),
   },
   portOfLoading: {
-    required: helpers.withMessage('Required', required),
+    required: helpers.withMessage(
+      'Port of loading or city is required.',
+      required
+    ),
     minLength: helpers.withMessage(
-      'Must be 3–60 characters',
+      'Port of loading or city must be at least 3 characters long.',
       minLength(3)
     ),
     maxLength: helpers.withMessage(
-      'Must be 3–60 characters',
+      'Port of loading or city must be no more than 60 characters long.',
       maxLength(60)
     ),
   },
   destinationCountry: {
-    required: helpers.withMessage('Required', required),
+    required: helpers.withMessage(
+      'Please select the destination country.',
+      required
+    ),
   },
   destinationPort: {
-    required: helpers.withMessage('Required', required),
+    required: helpers.withMessage(
+      'Destination (port or city) is required.',
+      required
+    ),
     minLength: helpers.withMessage(
-      'Must be 3–60 characters',
+      'Destination must be at least 3 characters long.',
       minLength(3)
     ),
     maxLength: helpers.withMessage(
-      'Must be 3–60 characters',
+      'Destination must be no more than 60 characters long.',
       maxLength(60)
     ),
   },
 }
+
 
 const v$ = useVuelidate(rules, application as any)
 
@@ -252,6 +282,26 @@ const errors = computed(() => {
 })
 
 const activeAddressForm = ref<'buyer' | 'consignee' | null>(null)
+
+
+
+const addressId = ref<string | null>(null)
+const addressformKey = ref(0)
+function editAddress(address: Address) {
+  addressId.value = address.addressId
+  activeAddressForm.value = address.type
+
+  // You might want to pass the address ID to the form for editing
+  // This can be done via an event or a shared state
+  // For simplicity, we'll just log it here
+  console.log('Editing address with ID:', address.addressId)
+}
+
+function closeAddressForm() {
+  activeAddressForm.value = null
+  addressformKey.value++
+}
+
 
 
 // Expose validity state to parent

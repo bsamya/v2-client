@@ -2,6 +2,8 @@ export const notificationTypes = ['Company Updates', 'Applications', 'Accounting
 
 export const permissionTypes = ['Manage Users', 'Manage Company Info', 'View Applications', 'Edit Applications']
 
+export const transportationTypes = ['Air', 'Road', 'Sea', 'Rail']
+
 
 export const icon = {
   profile: {

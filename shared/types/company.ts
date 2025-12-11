@@ -215,8 +215,7 @@ export type MailingAddress = {
 
 export type Address = {
   addressId: string;
-  companyId: string;
-  type: 'buyer' | 'consignee' | 'other';
+  type: 'buyer' | 'consignee';
   company: string;
   name: string;
   address1: string;
@@ -227,4 +226,5 @@ export type Address = {
   country: string;
   phone?: string;
   email?: string;
+  isDeleted: boolean;
 };

@@ -4,6 +4,7 @@ import {
   doc,
   setDoc,
   getDoc,
+  getDocs,
   updateDoc,
   Timestamp,
   query,
@@ -75,7 +76,6 @@ export const useCompanyStore = defineStore('company', () => {
     events: {},
   })
 
-  const addressList = ref<Address[]>([]);
 
   const activeCompanyId = ref<string | null>(null)
 
@@ -200,54 +200,122 @@ export const useCompanyStore = defineStore('company', () => {
     return false
   }
 
-  function setActiveCompany(companyId?: string) {
-    console.log('setActiveCompany called with:', companyId)
-    console.log('Current activeCompanyId:', activeCompanyId.value)
 
+  let addressesUnsub: (() => void) | null = null
+
+  // 1️⃣ Map first
+  const addressMap = ref<Map<string, Address>>(new Map<string, Address>())
+
+  // 2️⃣ Then computed array for UI
+  const addressList = computed(() => Array.from(addressMap.value.values()))
+
+  // 3️⃣ Filtered computed arrays
+  const buyers = computed(() =>
+    Array.from(addressMap.value.values()).filter(a => a.type === 'buyer')
+  )
+
+  // 4️⃣ Filtered computed arrays
+  const consignees = computed(() =>
+    Array.from(addressMap.value.values()).filter(a => a.type === 'consignee')
+  )
+
+
+
+  async function setActiveCompany(companyId?: string) {
     if (companyId) {
-      // set selected company
       activeCompanyId.value = companyId
 
-      // Save to localStorage
       if (process.client) {
         localStorage.setItem('activeCompanyId', companyId)
       }
 
-      console.log('Set activeCompanyId to:', activeCompanyId.value)
+      // 🛑 Stop previous listener if switching companies
+      if (addressesUnsub) {
+        addressesUnsub()
+        addressesUnsub = null
+      }
+
+      // clear current map
+      addressMap.value = new Map<string, Address>()
+      const addressesRef = collection($db, 'companies', companyId, 'addresses')
+
+      // -------------------------------------------------------------------
+      // 1️⃣ INITIAL LOAD WITH getDocs
+      // -------------------------------------------------------------------
+      const q = query(addressesRef, where("isDeleted", "==", false))
+
+      const snap = await getDocs(q)
+      console.log('Loading addresses for company:', companyId, snap.size, 'addresses');
+
+      const map = new Map<string, Address>()
+      snap.docs.forEach(d => {
+        const data = d.data() as Address
+        console.log('Loaded address:', d.id, data);
+
+        // 🔑 pick ONE id source and be consistent:
+        // if you want Firestore doc.id as key:
+        map.set(d.id, { ...data }) // or { ...data, addressId: d.id } if needed
+        // if you *must* use data.addressId, then also use it in onSnapshot below
+      })
+
+      addressMap.value = map
+
+      // -------------------------------------------------------------------
+      // 2️⃣ REALTIME UPDATES WITH CHANGE TYPES
+      // -------------------------------------------------------------------
+      addressesUnsub = onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          const id = change.doc.id
+          const data = change.doc.data() as Address
+
+          switch (change.type) {
+            case 'added':
+            case 'modified':
+              addressMap.value.set(id, data)
+              break
+
+            case 'removed':
+              addressMap.value.delete(id)
+              break
+          }
+        })
+
+        // 🔥 IMPORTANT: reassign Map so Vue recomputes addressList
+        addressMap.value = new Map(addressMap.value)
+      })
+
       return
     }
 
-    // No companyId passed: try to restore from localStorage
+    // -------------------------------------------------------------------
+    // RESTORE DEFAULT / SAVED COMPANY (unchanged logic)
+    // -------------------------------------------------------------------
     let savedCompanyId: string | null = null
+
     if (process.client) {
       savedCompanyId = localStorage.getItem('activeCompanyId')
     }
 
-    // Check if saved company still exists in companies array
     if (savedCompanyId && companies.value.some(c => c.companyId === savedCompanyId)) {
       activeCompanyId.value = savedCompanyId
-      console.log('Restored activeCompanyId from localStorage:', activeCompanyId.value)
       return
     }
 
-    // set default company if exists
-    const defaultCompany = companies.value.find(c => c?.isDefault)
-    if (defaultCompany) {
-      activeCompanyId.value = defaultCompany.companyId
+    const def = companies.value.find(c => c?.isDefault)
+    if (def) {
+      activeCompanyId.value = def.companyId
     }
 
-    // else set first company
     if (!activeCompanyId.value) {
       activeCompanyId.value = companies.value[0]?.companyId || null
     }
 
-    // Save the fallback selection to localStorage
     if (process.client && activeCompanyId.value) {
       localStorage.setItem('activeCompanyId', activeCompanyId.value)
     }
-
-    console.log('Set default activeCompanyId to:', activeCompanyId.value)
   }
+
+
 
   function newCompany() {
     company.value = {
@@ -427,6 +495,38 @@ export const useCompanyStore = defineStore('company', () => {
     // companyStore.removeUser(user);
   }
 
+  function setAddress(address: Address) {
+    if (!activeCompanyId.value) {
+      throw new Error('No active company selected')
+    }
+    console.log('Setting address:', activeCompanyId.value, address);
+
+    const addressRef = doc(
+      $db,
+      'companies',
+      activeCompanyId.value,
+      'addresses',
+      address.addressId
+    )
+    return setDoc(addressRef, address)
+  }
+
+  function deleteAddress(addressId: string) {
+    if (!activeCompanyId.value) {
+      throw new Error('No active company selected')
+    }
+
+    const addressRef = doc(
+      $db,
+      'companies',
+      activeCompanyId.value,
+      'addresses',
+      addressId
+    )
+    return updateDoc(addressRef, { isDeleted: true })
+  }
+
+
   // ---------------------------------------------------------------------------
   // Watchers
   // ---------------------------------------------------------------------------
@@ -448,7 +548,7 @@ export const useCompanyStore = defineStore('company', () => {
     activeCompanyId,
     registeredAdressIsValid,
     operationsAdressIsValid,
-    addressList,
+    addressMap,
 
     // computed
     partner,
@@ -456,6 +556,9 @@ export const useCompanyStore = defineStore('company', () => {
     activeCompanyPartner,
     companyList,
     notifications,
+    addressList,
+    buyers,
+    consignees,
 
     // methods
     getCompanyById,
@@ -466,5 +569,7 @@ export const useCompanyStore = defineStore('company', () => {
     setUserSettings,
     removeUser,
     setActiveCompany,
+    setAddress,
+    deleteAddress,
   }
 })
