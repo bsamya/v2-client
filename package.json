@@ -46,6 +46,7 @@
     "@types/node": "^24.10.0",
     "@types/papaparse": "^5.5.0",
     "@types/pdfmake": "^0.2.12",
+    "baseline-browser-mapping": "^2.9.6",
     "vuetify-nuxt-module": "^0.18.8"
   }
 }

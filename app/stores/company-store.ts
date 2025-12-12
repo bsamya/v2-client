@@ -27,10 +27,14 @@ export const useCompanyStore = defineStore('company', () => {
 
   const companiesRef = collection($db, 'companies')
   // Query where authorizedUsers array contains current user email
-  const companiesQuery = query(
-    companiesRef,
-    where('authorizedUsers', 'array-contains', $auth.currentUser?.email)
-  )
+  const companiesQuery = computed(() => {
+    const email = $auth.currentUser?.email
+    if (!email) return null
+    return query(
+      companiesRef,
+      where('authorizedUsers', 'array-contains', email)
+    )
+  })
 
   // ---------------------------------------------------------------------------
   // State
@@ -88,43 +92,59 @@ export const useCompanyStore = defineStore('company', () => {
   // ---------------------------------------------------------------------------
   // Firestore subscription
   // ---------------------------------------------------------------------------
-  onSnapshot(companiesQuery, snapshot => {
-    snapshot.docChanges().forEach(change => {
-      const data = change.doc.data() as Company
+  let unsubscribeCompanies: (() => void) | null = null
 
-      if (change.type === 'added') {
-        // avoid duplicates in case of hot-reload / reconnect
-        const exists = companies.value.some(
-          c => c.companyId === data.companyId || c.companyId === change.doc.id
-        )
-        if (!exists) {
-          companies.value.push(data)
+  watch(companiesQuery, (query) => {
+    // Unsubscribe from previous listener
+    if (unsubscribeCompanies) {
+      unsubscribeCompanies()
+      unsubscribeCompanies = null
+    }
+
+    // Only subscribe if we have a valid query
+    if (!query) {
+      companies.value = []
+      return
+    }
+
+    unsubscribeCompanies = onSnapshot(query, snapshot => {
+      snapshot.docChanges().forEach(change => {
+        const data = change.doc.data() as Company
+
+        if (change.type === 'added') {
+          // avoid duplicates in case of hot-reload / reconnect
+          const exists = companies.value.some(
+            c => c.companyId === data.companyId || c.companyId === change.doc.id
+          )
+          if (!exists) {
+            companies.value.push(data)
+          }
         }
-      }
 
-      if (change.type === 'modified') {
-        const index = companies.value.findIndex(
-          c => c.companyId === change.doc.id || c.companyId === data.companyId
-        )
-        if (index !== -1) {
-          companies.value[index] = data
+        if (change.type === 'modified') {
+          const index = companies.value.findIndex(
+            c => c.companyId === change.doc.id || c.companyId === data.companyId
+          )
+          if (index !== -1) {
+            companies.value[index] = data
+          }
         }
-      }
 
-      if (change.type === 'removed') {
-        companies.value = companies.value.filter(
-          c => c.companyId !== change.doc.id
-        )
+        if (change.type === 'removed') {
+          companies.value = companies.value.filter(
+            c => c.companyId !== change.doc.id
+          )
+        }
+      })
+
+      console.log('Company store: Loaded', companies.value.length, 'companies')
+
+      // Only set default if no active company is set yet
+      if (!activeCompanyId.value) {
+        setActiveCompany()
       }
     })
-
-    console.log('Company store: Loaded', companies.value.length, 'companies')
-
-    // Only set default if no active company is set yet
-    if (!activeCompanyId.value) {
-      setActiveCompany()
-    }
-  })
+  }, { immediate: true })
 
   // ---------------------------------------------------------------------------
   // Computed
